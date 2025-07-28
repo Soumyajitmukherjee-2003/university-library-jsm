@@ -1,6 +1,6 @@
 import { serve } from "@upstash/workflow/nextjs";
 import { db } from "@/database/drizzle";
-import { users } from "@/database/schema";
+import { todo } from "@/database/schema";
 import { eq } from "drizzle-orm";
 import { sendEmail } from "@/lib/workflow";
 
@@ -18,8 +18,8 @@ const THIRTY_DAYS_IN_MS = 30 * ONE_DAY_IN_MS;
 const getUserState = async (email: string): Promise<UserState> => {
   const user = await db
     .select()
-    .from(users)
-    .where(eq(users.email, email))
+    .from(todo)
+    .where(eq(todo.email, email))
     .limit(1);
 
   if (user.length === 0) return "non-active";
@@ -41,7 +41,6 @@ const getUserState = async (email: string): Promise<UserState> => {
 export const { POST } = serve<InitialData>(async (context) => {
   const { email, fullName } = context.requestPayload;
 
-  // Welcome Email
   await context.run("new-signup", async () => {
     await sendEmail({
       email,
