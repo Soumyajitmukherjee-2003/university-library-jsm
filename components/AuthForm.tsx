@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { FIELD_NAMES, FIELD_TYPES } from "@/constants";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "sonner"; 
 
 interface Props<T extends FieldValues> {
   schema: ZodType<T>;
@@ -46,15 +46,16 @@ const AuthForm = <T extends FieldValues>({
   const handleSubmit: SubmitHandler<T> = async (data) => {
     const result = await onSubmit(data);
     if (result.success) {
-      toast({
-        title: "Success",
-        description: isSignIn
+      toast.success(
+        isSignIn
           ? "You have successfully signed in."
-          : "You have successfully signed up.",
-      });
+          : "You have successfully signed up."
+      );
       router.push("/");
     } else {
-      form.setError("root", { message: result.error || "Unknown error" });
+      form.setError("root", {
+        message: result.error || "Unknown error occurred",
+      });
     }
   };
 
@@ -82,7 +83,8 @@ const AuthForm = <T extends FieldValues>({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-white" htmlFor={key}>
-                    {FIELD_NAMES[key as keyof typeof FIELD_NAMES] ?? key}
+                    {FIELD_NAMES[key as keyof typeof FIELD_NAMES] ??
+                      key.charAt(0).toUpperCase() + key.slice(1)}
                   </FormLabel>
                   <FormControl>
                     <Input
