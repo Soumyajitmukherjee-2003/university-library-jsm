@@ -20,7 +20,7 @@ export const BORROW_STATUS_ENUM = pgEnum("borrow_status", [
   "RETURNED",
 ]);
 
-export const users = pgTable("todo", {
+export const todo = pgTable("todo", {
   id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
   email: text("email").notNull().unique(),
@@ -54,7 +54,7 @@ export const books = pgTable("books", {
 export const borrowRecords = pgTable("borrow_records", {
   id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
   userId: uuid("user_id")
-    .references(() => users.id)
+    .references(() => todo.id)
     .notNull(),
   bookId: uuid("book_id")
     .references(() => books.id)
