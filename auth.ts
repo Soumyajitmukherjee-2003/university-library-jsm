@@ -1,23 +1,16 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import NextAuth, { User } from "next-auth";
 import { compare } from "bcryptjs";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/database/drizzle";
 import { todo } from "@/database/schema";
 import { eq } from "drizzle-orm";
-import type { NextAuthConfig } from "next-auth";
-import type { User } from "next-auth";
 
-const authConfig: NextAuthConfig = {
+export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
   },
   providers: [
     CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null;
@@ -33,7 +26,7 @@ const authConfig: NextAuthConfig = {
 
         const isPasswordValid = await compare(
           credentials.password.toString(),
-          user[0].password
+          user[0].password,
         );
 
         if (!isPasswordValid) return null;
@@ -42,7 +35,7 @@ const authConfig: NextAuthConfig = {
           id: user[0].id.toString(),
           email: user[0].email,
           name: user[0].fullName,
-        } satisfies User;
+        } as User;
       },
     }),
   ],
@@ -55,6 +48,7 @@ const authConfig: NextAuthConfig = {
         token.id = user.id;
         token.name = user.name;
       }
+
       return token;
     },
     async session({ session, token }) {
@@ -62,9 +56,8 @@ const authConfig: NextAuthConfig = {
         session.user.id = token.id as string;
         session.user.name = token.name as string;
       }
+
       return session;
     },
   },
-};
-
-export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
+});
