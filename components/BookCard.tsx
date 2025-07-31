@@ -1,8 +1,9 @@
 import Link from "next/link";
 import React from "react";
 import BookCover from "@/components/BookCover";
-import { Button } from "./ui/button";
-import Image from "next/image"; // Required for the <Image /> to work
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import Image from "next/image"; 
 
 interface Book {
   id: string;
@@ -17,8 +18,8 @@ const BookCard = ({
   id,
   title,
   genre,
-  color,
-  cover,
+  coverColor,
+  coverUrl,
   isLoanedBook = false,
 }: Book) => {
   const liClassName = isLoanedBook ? "xs:w-52 w-full" : "";
@@ -30,7 +31,7 @@ const BookCard = ({
   return (
     <li className={liClassName}>
       <Link href={`/books/${id}`} className={linkClassName}>
-        <BookCover coverColor={color} coverUrl={cover} />
+        <BookCover coverColor={coverColor} coverUrl={coverUrl} />
         <div className={infoContainerClass}>
           <p className="book-title">{title}</p>
           <p className="book-genre">{genre}</p>

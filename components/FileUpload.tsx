@@ -1,33 +1,36 @@
 "use client";
 
-import { IKImage, ImageKitProvider, IKUpload, IKVideo } from "imagekitio-next";
+import {
+  IKImage,
+  ImageKitProvider,
+  IKUpload,
+  IKVideo,
+} from "imagekitio-next";
 import config from "@/lib/config";
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+
 const {
   env: {
     imagekit: { publicKey, urlEndpoint },
+    apiEndpoint,
   },
 } = config;
 
 const authenticator = async () => {
   try {
-    const response = await fetch(`${config.env.apiEndpoint}/api/auth/imagekit`);
+    const response = await fetch(`${apiEndpoint}/api/auth/imagekit`);
 
     if (!response.ok) {
       const errorText = await response.text();
-
       throw new Error(
         `Request failed with status ${response.status}: ${errorText}`,
       );
     }
 
-    const data = await response.json();
-
-    const { signature, expire, token } = data;
-
+    const { signature, expire, token } = await response.json();
     return { token, expire, signature };
   } catch (error: any) {
     throw new Error(`Authentication request failed: ${error.message}`);
@@ -53,7 +56,7 @@ const FileUpload = ({
   onFileChange,
   value,
 }: Props) => {
-  const ikUploadRef = useRef(null);
+  const ikUploadRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<{ filePath: string | null }>({
     filePath: value ?? null,
   });
@@ -69,7 +72,7 @@ const FileUpload = ({
   };
 
   const onError = (error: any) => {
-    console.log(error);
+    console.error("Upload error:", error);
 
     toast({
       title: `${type} upload failed`,
@@ -89,25 +92,15 @@ const FileUpload = ({
   };
 
   const onValidate = (file: File) => {
-    if (type === "image") {
-      if (file.size > 20 * 1024 * 1024) {
-        toast({
-          title: "File size too large",
-          description: "Please upload a file that is less than 20MB in size",
-          variant: "destructive",
-        });
+    const maxSize = type === "image" ? 20 : 50; // in MB
 
-        return false;
-      }
-    } else if (type === "video") {
-      if (file.size > 50 * 1024 * 1024) {
-        toast({
-          title: "File size too large",
-          description: "Please upload a file that is less than 50MB in size",
-          variant: "destructive",
-        });
-        return false;
-      }
+    if (file.size > maxSize * 1024 * 1024) {
+      toast({
+        title: "File size too large",
+        description: `Please upload a ${type} under ${maxSize}MB.`,
+        variant: "destructive",
+      });
+      return false;
     }
 
     return true;
@@ -126,20 +119,19 @@ const FileUpload = ({
         useUniqueFileName={true}
         validateFile={onValidate}
         onUploadStart={() => setProgress(0)}
-        onUploadProgress={({ loaded, total }) => {
-          const percent = Math.round((loaded / total) * 100);
-
-          setProgress(percent);
-        }}
+        onUploadProgress={({ loaded, total }) =>
+          setProgress(Math.round((loaded / total) * 100))
+        }
         folder={folder}
         accept={accept}
         className="hidden"
       />
 
       <button
-        className={cn("upload-btn", styles.button)}
+        className={cn("upload-btn flex items-center gap-2 px-4 py-2 rounded-md", styles.button)}
         onClick={(e) => {
           e.preventDefault();
+          ikUploadRef.current?.click();
         }}
       >
         <Image
@@ -149,37 +141,41 @@ const FileUpload = ({
           height={20}
           className="object-contain"
         />
-
         <p className={cn("text-base", styles.placeholder)}>{placeholder}</p>
 
-        {file && (
-          <p className={cn("upload-filename", styles.text)}>{file.filePath}</p>
+        {file?.filePath && (
+          <p className={cn("truncate text-sm", styles.text)}>{file.filePath}</p>
         )}
       </button>
 
-      {progress > 0 && progress !== 100 && (
-        <div className="w-full rounded-full bg-green-200">
-          <div className="progress" style={{ width: `${progress}%` }}>
-            {progress}%
-          </div>
+      {progress > 0 && progress < 100 && (
+        <div className="w-full bg-gray-300 rounded-full mt-2 overflow-hidden">
+          <div
+            className="h-2 bg-green-500 transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          ></div>
         </div>
       )}
 
-      {file &&
-        (type === "image" ? (
-          <IKImage
-            alt={file.filePath}
-            path={file.filePath}
-            width={500}
-            height={300}
-          />
-        ) : type === "video" ? (
-          <IKVideo
-            path={file.filePath}
-            controls={true}
-            className="h-96 w-full rounded-xl"
-          />
-        ) : null)}
+      {file?.filePath && (
+        <div className="mt-4">
+          {type === "image" ? (
+            <IKImage
+              alt="uploaded image"
+              path={file.filePath}
+              width={500}
+              height={300}
+              className="rounded-lg"
+            />
+          ) : type === "video" ? (
+            <IKVideo
+              path={file.filePath}
+              controls
+              className="h-96 w-full rounded-xl"
+            />
+          ) : null}
+        </div>
+      )}
     </ImageKitProvider>
   );
 };
