@@ -21,7 +21,7 @@ export const borrowBook = async (params: BorrowBookParams) => {
         error: "Book is not available for borrowing",
       };
     }
-
+    
     const dueDate = dayjs().add(7, "day").toDate().toDateString();
 
     const record = await db.insert(borrowRecords).values({
