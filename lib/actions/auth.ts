@@ -68,7 +68,7 @@ export const signUp = async (params: AuthCredentials) => {
       password: hashedPassword,
       universityCard,
     });
-
+    console.log("Test 1==>");
     await workflowClient.trigger({
       url: `/api/workflows/onboarding`,
       body: {
